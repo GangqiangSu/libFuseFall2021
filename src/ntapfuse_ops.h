@@ -64,4 +64,9 @@ int ntapfuse_releasedir (const char *path, struct fuse_file_info *fi);
 int ntapfuse_access (const char *path, int mode);
 void *ntapfuse_init (struct fuse_conn_info *conn);
 
+struct ntapfuse_user_data {
+  char basedir[PATH_MAX];;
+  int logfd;
+};
+
 #endif /* NTAPFUSE_H */

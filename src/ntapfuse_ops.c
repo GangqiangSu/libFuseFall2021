@@ -39,7 +39,7 @@
 void
 fullpath (const char *path, char *buf)
 {
-  char *basedir = (char *) fuse_get_context ()->private_data;
+  char *basedir = ((struct ntapfuse_user_data *) fuse_get_context ()->private_data)->basedir;
 
   strcpy (buf, basedir);
   strcat (buf, path);
@@ -83,6 +83,15 @@ ntapfuse_mkdir (const char *path, mode_t mode)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
+  int fd = ((struct ntapfuse_user_data *) fuse_get_context ()->private_data)->logfd;
+  if (fd >= 0)
+  {
+    char buf[BUFSIZ];
+
+    snprintf(buf, sizeof(buf), "[%ld] [mkdir] %s\n", time(NULL), fpath);
+    write(fd, buf, strlen(buf));
+  }
+
   return mkdir (fpath, mode | S_IFDIR) ? -errno : 0;
 }
 
@@ -91,6 +100,15 @@ ntapfuse_unlink (const char *path)
 {
   char fpath[PATH_MAX];
   fullpath (path, fpath);
+
+  int fd = ((struct ntapfuse_user_data *) fuse_get_context ()->private_data)->logfd;
+  if (fd >= 0)
+  {
+    char buf[BUFSIZ];
+
+    snprintf(buf, sizeof(buf), "[%ld] [unlink] %s\n", time(NULL), fpath);
+    write(fd, buf, strlen(buf));
+  }
 
   return unlink (fpath) ? -errno : 0;
 }
@@ -101,6 +119,14 @@ ntapfuse_rmdir (const char *path)
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
+  int fd = ((struct ntapfuse_user_data *) fuse_get_context ()->private_data)->logfd;
+  if (fd >= 0)
+  {
+    char buf[BUFSIZ];
+
+    snprintf(buf, sizeof(buf), "[%ld] [rmdir] %s\n", time(NULL), fpath);
+    write(fd, buf, strlen(buf));
+  }
   return rmdir (fpath) ? -errno : 0;
 }
 
@@ -121,6 +147,15 @@ ntapfuse_rename (const char *src, const char *dst)
 
   char fdst[PATH_MAX];
   fullpath (dst, fdst);
+
+  int fd = ((struct ntapfuse_user_data *) fuse_get_context ()->private_data)->logfd;
+  if (fd >= 0)
+  {
+    char buf[BUFSIZ];
+
+    snprintf(buf, sizeof(buf), "[%ld] [rename] %s -> %s\n", time(NULL), fsrc, fdst);
+    write(fd, buf, strlen(buf));
+  }
 
   return rename (fsrc, fdst) ? -errno : 0;
 }
@@ -202,6 +237,14 @@ ntapfuse_write (const char *path, const char *buf, size_t size, off_t off,
   char fpath[PATH_MAX];
   fullpath (path, fpath);
 
+  int fd = ((struct ntapfuse_user_data *) fuse_get_context ()->private_data)->logfd;
+  if (fd >= 0)
+  {
+    char buf[BUFSIZ];
+
+    snprintf(buf, sizeof(buf), "[%ld] [write] %s, %lu, %ld\n", time(NULL), fpath, size, off);
+    write(fd, buf, strlen(buf));
+  }
   return pwrite (fi->fh, buf, size, off) < 0 ? -errno : size;
 }
 

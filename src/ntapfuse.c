@@ -30,8 +30,6 @@
 #include <string.h>
 #include <unistd.h>
 
-char base[PATH_MAX];
-
 struct fuse_operations ntapfuse_ops = {
   .getattr = ntapfuse_getattr,
   .readlink = ntapfuse_readlink,
@@ -63,6 +61,10 @@ struct fuse_operations ntapfuse_ops = {
   .init = ntapfuse_init,
 };
 
+struct ntapfuse_user_data user_data;
+
+#define LOG_FILENAME ".ntapfuse.log"
+
 void
 usage ()
 {
@@ -89,7 +91,7 @@ main (int argc, char *argv[])
       if (argc < 4)
 	usage ();
 
-      if (realpath (argv[2], base) == NULL)
+      if (realpath (argv[2], user_data.basedir) == NULL)
 	perror ("main_realpath");
 
       int i = 1;
@@ -97,10 +99,17 @@ main (int argc, char *argv[])
 	argv[i] = argv[i + 2];
       argc -= 2;
 
-      int ret = fuse_main (argc, argv, &ntapfuse_ops, base);
+      int ret = fuse_main (argc, argv, &ntapfuse_ops, &user_data);
 
       if (ret < 0)
 	perror ("fuse_main");
+
+    user_data.logfd = -1;
+    snprintf(fpath, sizeof(fpath), "%s/%s", user_data.basedir, LOG_FILENAME);
+    user_data.logfd = open(fpath, O_APPEND);
+  
+    if(user_data.logfd < 0)
+      perror("open logfile");
 
       return ret;
     }
